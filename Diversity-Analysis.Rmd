@@ -1,0 +1,104 @@
+---
+title: "Análisis de Diversidad"
+author: "Camilo Vélez"
+date: "14/8/2021"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    theme: darkly
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(eval = TRUE, echo = TRUE, message = FALSE, warning = FALSE)
+library(vegan)
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+```
+
+## **Marco General**
+
+&nbsp;&nbsp;&nbsp;&nbsp;En general, la diversidad es una medida para cuantificar el número de diferentes estados en un sistema. En el caso particular de las comunidades biológicas, estos estados suelen ser especies pero también pueden referirse a  géneros, familias, OTU's (Operational Taxonomic Unit) o grupos funcionales. En ecología, la diversidad es considerada una "propiedad emergente" de las comunidades y por lo tanto actúa a nivel de las comunidades y no de las especies.
+  
+&nbsp;&nbsp;&nbsp;&nbsp; La diversidad tiene dos componentes: __riqueza de especies__ (número de especies en una comunidad), y __la uniformidad o equilibrio de especies__ (forma en la que se distribuye la abundancia de especies más comunes y las consideradas "raras"). En una comunidad pefectamente _uniforme_, cada especie está representada por el mismo número de individuos y por tanto hay una alta probabilidad de encontrar una especie nueva durante un muestreo aleatorio. Si es altamente desigual, la comunidad es dominada por una o pocas especies mientras que las otras son consideradas como _raras_. En este caso, la probabilidad de encontrar una especie nueva se reduce drásticamente. Una comunidad será más diversa si, además de mostrar un alto número de especies, presenta una alta uniformidad.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Es interesante destacar que una comunidad biológica uniforme y otra desigual son funcionalmente distintas. En la primera, las interacciones ocurren principalmente entre individuos de distintas especies, por lo que en ella prevalecen las interacciones interespecíficas. En una comunidad desigual predominan las interacciones intraespecíficas ya que los individuos que interactúan en ella pertenecen a la misma especie.
+
+&nbsp;&nbsp;&nbsp;&nbsp;Hay varios índices de diversidad que difieren en cuanto a si estos ponen más énfasis en la riqueza de especies o en la uniformidad de la comunidad. La riqueza de especies no tiene en cuenta la equidad; para el índice de Simpson es fundamental. Si bien el cálculo de los índices de diversidad es una tarea relativamente sencilla, es necesario conocer como operan y cuales son sus limitaciones a fin de interpretar adecuadamente el significado de cada uno de ellos.
+
+&nbsp;&nbsp;&nbsp;&nbsp;La riqueza de especies y la equitabilidad de una comunidad son valores teóricos, ya que ellos se estiman a partir de muestreos, y por definición los muestreos siempre son incompletos. Los estimadores de diversidad dependen del esfuerzo de muestreo, entre mayor sea este más ajustados serán los índices.
+
+&nbsp;&nbsp;&nbsp;&nbsp; Whittaker introduce los términos de alfa, beta y gamma diversidad a fin de estimar la variedad biológica de un ecosistema en distintas escalas greográficas. La alfa-diversidad mide la riqueza de especies a nivel local, mientras que la beta-diversidad estima la tasa de cambio de especies de dos comunidades biológicas adjacentes dispuestas a lo largo de un gradiente espacial, temporal o ambiental (refleja el grado de heterogeneidad de un conjunto de comunidades). La alfa y beta diversidad son estimaciones independientes: una comunidad puede mostrar una alfa-diversidad media alta y a su vez presentar una beta-diversidad media baja, y viceversa.
+
+
+### *Carga de las bases de datos*
+Conteo de diatomeas: ríos Colorado (RC), Negro (RN) y Chubut (CH)
+
+```{r}
+especiesRC <- read.csv("conteo RC.csv", header = T, row.names = 1, sep =",")
+especiesRN <- read.csv("conteo RN.csv", header = T, row.names = 1, sep =",")
+especiesCH <- read.csv("conteo CH.csv", header = T, row.names = 1, sep =",")
+
+```
+
+Para calcular la abundancia relativa de las especies se utiliza el siguiente código:
+
+```{r}
+especiesRC.rel <- decostand(especiesRC, "total")*100
+especiesRN.rel <- decostand(especiesRC, "total")*100
+especiesCH.rel <- decostand(especiesRC, "total")*100
+```
+
+### *Riqueza específica (S)*
+
+&nbsp;&nbsp;&nbsp;&nbsp;Es una medida que está relacionada con el número de especies presentes en una comunidad.
+
+```{r}
+S.RC <- specnumber(especiesRC)
+```
+
+### *Índice de Shannon (H)*
+También conocido como entropía de Shannon o índice de Shannon-Wiener (incorretamente denominado Shannon-Wiever) [^nota1].
+
+&nbsp;&nbsp;&nbsp;&nbsp;El índice de Shannon mide el contenido de información de un individuo en un muestreo aleatorio cuando se conoce el número total de especies. Este índice también puede interpretarse como una medida de la incertidumbre para predecir a qué especie pertenecerá un individuo elegido al azar de una muestra de *S* especies y *N* individuos.
+
+```{r}
+H.RC <- diversity(especiesRC.rel, index = "shannon")
+```
+
+Por lo tanto, si una comunidad contiene una sola especie entonces H = 0. Estos significa que la incertidumbre al seleccionar un individuo se incrementará a medida que aumente el número de especies de una comunidad. El índice de Shannon (H) alcanza su valor máximo (Hmax) cuando todas las especies se encuentran igualmente representadas en la comunidad, y es equivalente al logaritmo de la riqueza específica.
+
+
+### *Índice de Simpson (D)*
+
+&nbsp;&nbsp;&nbsp;&nbsp;Este índice estima la probabilidad de que dos individuos extraídos al azar de una comunidad pertenezcan a la misma especie. 
+
+```{r}
+D.RC <- diversity(especiesRC.rel, index = "simpson")
+```
+
+### *Equidad de Pielou (J)*
+
+```{r}
+J.RC <- H.RC/log(S.RC)
+```
+
+### *Equidad de Simpson*
+
+```{r}
+EQ.RC <- (1/D.RC)/S.RC
+```
+
+### *Tabla resumen con los índices de diversidad*
+
+```{r}
+divRC <- data.frame(S.RC, H.RC, D.RC, J.RC, EQ.RC)
+kable(divRC, digits = 2) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"),   full_width = F) %>% 
+  scroll_box(height = "400px", width = "400px")
+```
+
+[^1] Artículo donde explican cómo surgió el error en la cita del índice de Shannon.
+
+
